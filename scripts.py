@@ -2,6 +2,7 @@ import threading, webbrowser, os, subprocess
 from time import sleep
 from functools import partial
 import lp_events, lp_colors, kb, sound, ms
+import requests
 
 COLOR_PRIMED = 5 #red
 COLOR_FUNC_KEYS_PRIMED = 9 #amber
@@ -10,7 +11,7 @@ DELAY_EXIT_CHECK = 0.025
 
 import files
 
-VALID_COMMANDS = ["@ASYNC", "@SIMPLE", "@LOAD_LAYOUT", "STRING", "DELAY", "TAP", "PRESS", "RELEASE", "WEB", "WEB_NEW", "CODE", "SOUND", "SOUND_STOP", "WAIT_UNPRESSED", "M_MOVE", "M_SET", "M_SCROLL", "M_LINE", "M_LINE_MOVE", "M_LINE_SET", "LABEL", "IF_PRESSED_GOTO_LABEL", "IF_UNPRESSED_GOTO_LABEL", "GOTO_LABEL", "REPEAT_LABEL", "IF_PRESSED_REPEAT_LABEL", "IF_UNPRESSED_REPEAT_LABEL", "M_STORE", "M_RECALL", "M_RECALL_LINE", "OPEN", "RELEASE_ALL", "RESET_REPEATS"]
+VALID_COMMANDS = ["@ASYNC", "@SIMPLE", "@LOAD_LAYOUT", "STRING", "DELAY", "TAP", "PRESS", "RELEASE", "WEB", "WEB_NEW", "CODE", "SOUND", "SOUND_STOP", "WAIT_UNPRESSED", "M_MOVE", "M_SET", "M_SCROLL", "M_LINE", "M_LINE_MOVE", "M_LINE_SET", "LABEL", "IF_PRESSED_GOTO_LABEL", "IF_UNPRESSED_GOTO_LABEL", "GOTO_LABEL", "REPEAT_LABEL", "IF_PRESSED_REPEAT_LABEL", "IF_UNPRESSED_REPEAT_LABEL", "M_STORE", "M_RECALL", "M_RECALL_LINE", "OPEN", "RELEASE_ALL", "RESET_REPEATS", "AVO_PLAY_PLAYBACK", "AVO_KILL_PLAYBACK"]
 ASYNC_HEADERS = ["@ASYNC", "@SIMPLE"]
 
 threads = [[None for y in range(9)] for x in range(9)]
@@ -217,6 +218,30 @@ def run_script(script_str, x, y):
                         link = "http://" + link
                     print("[scripts] " + coords + "    Open website " + link + " in default browser, try to make a new window")
                     webbrowser.open_new(link)
+                elif split_line[0] == 'AVO_PALETTE':
+                    handleNum = split_line[1]
+                    paletteTimes = 'true'
+                    if len(split_line) >= 3 and split_line[2] == 'false':
+                        paletteTimes = 'false'
+                    print("[scripts] " + coords + "   Applying palette " + handleNum)
+                    try:
+                        requests.get(f'http://127.0.0.1:4430/titan/script/2/Palette/ApplyQuickPalette?handle_userNumber={handleNum}&usePaletteTimes={paletteTimes}')
+                    except Exception as e:
+                        print("[scripts] " + coords + "    Error with applying palette: " + str(e))
+                elif split_line[0] == 'AVO_PLAY_PLAYBACK':
+                    handleNum = split_line[1]
+                    print("[scripts] " + coords + "   Firing playback " + handleNum)
+                    try:
+                        requests.get(f'http://[ip]:4430/titan/script/2/Playbacks/PlayPlayback?handle_userNumber={handleNum}&level=1.0&accuracy=1.0')
+                    except Exception as e:
+                        print("[scripts] " + coords + "    Error with playing playback: " + str(e))
+                elif split_line[0] == 'AVO_KILL_PLAYBACK':
+                    handleNum = split_line[1]
+                    print("[scripts] " + coords + "   Killing playback " + handleNum)
+                    try:
+                        requests.get(f'http://[ip]:4430/titan/script/2/Playbacks/KillPlayback?handle_userNumber={handleNum}')
+                    except Exception as e:
+                        print("[scripts] " + coords + "    Error with killing playback: " + str(e))
                 elif split_line[0] == "CODE":
                     args = " ".join(split_line[1:])
                     print("[scripts] " + coords + "    Running code: " + args)
